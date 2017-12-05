@@ -21,8 +21,7 @@ fdl_split <- function(data, group = 'Cluster',
   invisible(NULL)
 }
 
-fdl <- function(data, group = 'Cluster', legend = 'topright',
-                col = NULL, add = FALSE) {
+fdl <- function(data, group = 'Cluster', legend = 'topright', col = NULL) {
   var <- if (length(var <- grep(group, names(data), value = TRUE)) > 1L)
     grep(sprintf('\\b%s\\b', group), names(data), value = TRUE)
   else if (!length(var))
@@ -38,8 +37,7 @@ fdl <- function(data, group = 'Cluster', legend = 'topright',
   op <- par(mar = c(0, 0, 0, 0))
   on.exit(par(op))
   
-  if (!add)
-    plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
+  plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
   
   if (!is.null(col))
     points(Y ~ X, data, pch = '.', cex = 2,
@@ -49,6 +47,7 @@ fdl <- function(data, group = 'Cluster', legend = 'topright',
       Y ~ X, data, pch = '.', cex = 2,
       col = if (ok)
         fvar else {
+          ## interpolate colors based on continuous values
           n    <- 100000L
           from <- range(data[, var], na.rm = TRUE)
           to <- 0:1 * n
