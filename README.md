@@ -18,6 +18,12 @@ Run:
   - Launch `VorteX.jar`
   
   - If prompted, enter the physical RAM size of your computer in GB (e.g., 16)
+  
+  - Import data, custer, force-directed layout
+  
+  - Export cluster assignments and FDL coordinates
+  
+  - Use [R script](https://github.com/raredd/cytof/blob/master/xshift.R) for [additional](https://github.com/raredd/cytof/blob/master/pl1.pdf) [figures](https://github.com/raredd/cytof/blob/master/pl2.pdf)
 
 Useful:
   
