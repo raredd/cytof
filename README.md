@@ -23,7 +23,7 @@ Run:
   
   - Export cluster assignments and FDL coordinates
   
-  - Use [R script](https://github.com/raredd/cytof/blob/master/xshift.R) for [additional](https://github.com/raredd/cytof/blob/master/pl1.pdf) [figures](https://github.com/raredd/cytof/blob/master/pl2.pdf)
+  - Use [R script](https://github.com/raredd/cytof/blob/master/01-xshift.R) for [additional](https://github.com/raredd/cytof/blob/master/out/pl1.pdf) [figures](https://github.com/raredd/cytof/blob/master/out/pl2.pdf)
 
 Useful:
   
