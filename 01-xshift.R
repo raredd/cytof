@@ -1,6 +1,6 @@
 ## r stuff for xshift
 ## readr::read_csv for speed
-source('fns.R')
+source('00-fns.R')
 
 
 ## read in fcs data after import (not necessary)
@@ -25,7 +25,7 @@ coords <- within(coords, {
 datm <- merge(coords, clust, by = c('Filename', 'EventID'))
 
 
-pdf('~/desktop/pl1.pdf', width = 10, height = 12)
+pdf('pl1.pdf', width = 10, height = 12)
 par(mfrow = c(3,2))
 fdl(datm, 'ClusterID', FALSE)
 fdl(datm, 'Group')
@@ -49,7 +49,7 @@ dev.off()
 
 wh <- c('PD', 'Tim', 'LAG', 'CTLA4', 'ICOS',
         '4-1BB', 'OX40', 'Ki-67', 'HLA', 'CD38')
-pdf('~/desktop/pl2.pdf', width = 10, height = 4)
+pdf('pl2.pdf', width = 10, height = 4)
 par(mfrow = c(1,2))
 for (ii in wh) {
   fdl_split(datm, ii)
