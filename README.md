@@ -1,4 +1,16 @@
 
+<style>
+#content img {
+  float: right;
+  margin: 0px 0px 15px 20px;
+}
+</style>
+
+<div id="content">
+<img src="out/fdl.gif" />
+</div>
+
+
 **X-Shift** is a population-finding algorithm that processes large datasets using fast kNN estimation of cell event density; it automatically arranges populations by a marker-based classification system ([Samusik et al. (2016) Nature Methods, 13(6), 493–496.](https://www.nature.com/articles/nmeth.3863)).
 
 **VorteX** is a graphical tool for cluster analysis of multiparametric datasets in biology, especially single-cell data.
@@ -23,7 +35,9 @@ Run:
   
   - Export cluster assignments and FDL coordinates
   
-  - Use [R script](https://github.com/raredd/cytof/blob/master/01-xshift.R) for [additional](https://github.com/raredd/cytof/blob/master/out/pl1.pdf) [figures](https://github.com/raredd/cytof/blob/master/out/pl2.pdf)
+  - Use [R script](01-xshift.R) for [additional](out/pl1.pdf) [figures](out/pl2.pdf)
+  
+  - See [Rmd](out/xshift.Rmd) or [html](out/xshift.html) for documentation and more info
 
 Useful:
   

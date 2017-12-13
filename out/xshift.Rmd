@@ -8,46 +8,30 @@ output:
 
 # 0. data, functions
 
-```{r}
-## r stuff for xshift
-## readr::read_csv for speed
-## fns
+There is one main function, `fdl`, used to make the figures. Typically, the data used will be imported as below, but any data with the required variables will work; see examples.
 
-fdl_split <- function(data, group = 'ClusterID', split = 'Group',
-                      legend = list(), reset_par = TRUE) {
-  sp <- split(data, data[, split])
-  gr <- grep(sprintf('\\b%s\\b', group), names(data))
-  xr <- range(data[, gr], na.rm = TRUE)
-  
-  op <- par(oma = c(0,0,0,0))
-  if (reset_par)
-    on.exit(par(op))
-  
-  lapply(seq_along(sp), function(ii) {
-    x <- sp[[ii]]
-    
-    fdl(data, group, FALSE, 'grey50', xr)
-    par(new = TRUE)
-    fdl(x, group, FALSE, NULL, xr, FALSE)
-    
-    mtext(names(sp)[ii], at = grconvertX(0, 'nfc'),
-          adj = -1, line = -2, font = 2L, cex = 1.5)
-  })
-  
-  cc <- c('blue', 'cyan', 'green', 'yellow', 'red')
-  nc <- seq_along(cc)
-  largs <- list(
-    x = 'topright', pch = 16L, title = gsub(':.*', '', group), xpd = NA,
-    col = cc,
-    legend = sprintf('%.1f', quantile(data[, gr], (nc - 1L) / diff(range(nc))))
-  )
-  do.call('legend', modifyList(largs, legend))
-  
-  invisible(NULL)
-}
+Use `fdl` to plot by discrete (eg, cluster ID) or continuous (eg, expression level) variable; use `fdl_split` to compare variable by group. `km` will crudely allow us to isolate some points.
+
+```{r}
+#' Plot force-directed layout
+#' 
+#' @param data a data frame with at least two columns, "X" and "Y", of
+#' coordinates, usually the exported force-directed layout data
+#' @param group the variable to color by
+#' @param legend an optional list of arguments passed to legend or FALSE
+#' for no legend
+#' @param col,from,reset_par,add not important
+#' 
+#' @examples
+#' x <- setNames(iris, c('X', 'Y', 'PL', 'PW', 'Group'))
+#' par(mfrow = c(2,2))
+#' fdl(x, 'Group')
+#' fdl(x, 'PL')
+#' fdl(x, 'PW', legend = list(title = 'Petal width', horiz = TRUE, bty = 'n'))
+#' fdl(x, 'PW', FALSE, 'grey50')
 
 fdl <- function(data, group = 'ClusterID', legend = list(),
-                col = NULL, from = NULL, reset_par = TRUE) {
+                col = NULL, from = NULL, reset_par = TRUE, add = FALSE) {
   ## interpolate colors based on continuous values
   interp <- function(x, col, alpha = FALSE, n = 1e5L,
                      fr = NULL, to = 0:1) {
@@ -72,7 +56,12 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
   data <- data[order(data[, var]), ]
   fvar <- as.factor(data[, var])
   
-  colors <- if (!(ok <- nlevels(fvar) < 50L))
+  ## guess if data is continuous or discrete
+  ok <- is.factor(data[, var]) ||
+    is.character(data[, var]) ||
+    all(round(data[, var]) == data[, var])
+  
+  colors <- if (!ok)
     c('blue', 'cyan', 'green', 'yellow', 'red') else 'grey50'
   if (!is.null(col))
     colors <- c('transparent', col)
@@ -82,7 +71,8 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
   if (reset_par)
     on.exit(par(op))
   
-  plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
+  if (!add)
+    plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
   
   if (is.null(group))
     points(Y ~ X, data, pch = '.', cex = 2,
@@ -105,6 +95,69 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
   
   invisible(NULL)
 }
+
+#' Split fdl by group
+#' 
+#' For each unique split, points are colored by "group" or grey if identified
+#' by another split.
+#' 
+#' @param data,group,legend,reset_par see fdl
+#' @param split variable to split figures
+#' 
+#' @examples
+#' x <- setNames(iris, c('X', 'Y', 'PL', 'PW', 'Group'))
+#' par(mfrow = c(1,3))
+#' fdl_split(x, 'PW', 'Group')
+
+fdl_split <- function(data, group = 'ClusterID', split = 'Group',
+                      legend = list()) {
+  sp <- split(data, data[, split])
+  gr <- grep(sprintf('\\b%s\\b', group), names(data))
+  xr <- range(data[, gr], na.rm = TRUE)
+  
+  op <- par(oma = c(0,0,0,0))
+  on.exit(par(op))
+  
+  lapply(seq_along(sp), function(ii) {
+    x <- sp[[ii]]
+    
+    fdl(data, group, FALSE, 'grey50', xr)
+    par(new = TRUE)
+    fdl(x, group, FALSE, NULL, xr, FALSE, TRUE)
+    mtext(names(sp)[ii], at = grconvertX(0, 'nfc'),
+          adj = -1, line = -2, font = 2L, cex = 1.5)
+  })
+  
+  cc <- c('blue', 'cyan', 'green', 'yellow', 'red')
+  nc <- seq_along(cc)
+  largs <- list(
+    x = 'topright', pch = 16L, title = gsub(':.*', '', group), xpd = NA,
+    col = cc,
+    legend = sprintf('%.1f', quantile(data[, gr], (nc - 1L) / diff(range(nc))))
+  )
+  do.call('legend', modifyList(largs, legend))
+  
+  invisible(NULL)
+}
+
+#' Crudely identify points of a cluster using k-means
+#' 
+#' @param data a data frame with at least two columns, "X" and "Y", of
+#' coordinates, usually the exported force-directed layout data
+#' @param centers number of clusters
+#' @param spider,hull logical; types of ordination diagrams to display
+#' @param groups optional vector of cluster(s) to draw
+#' @param col color for the diagrams
+#' 
+#' @examples
+#' x <- setNames(iris[, 1:2], c('X', 'Y'))
+#' par(mfrow = c(1,2))
+#' plot(x)
+#' cl <- km(x, 5)
+#' points(x, col = cl$cluster)
+#' 
+#' plot(x)
+#' km(x, 5, groups = 4, col = 4)
 
 km <- function(data, centers = length(unique(data$ClusterID)),
                spider = TRUE, hull = TRUE, groups = NULL, col = 'grey') {
@@ -130,19 +183,21 @@ km <- function(data, centers = length(unique(data$ClusterID)),
 }
 ```
 
+These data were exported to csv in x-shift after clustering and plotting a force-directed layout. Additionally, my files were named by group, A or B, but this can be added manually to the data by file name.
+
 ```{r, results='hold', message=FALSE}
 ## read in fcs data after import (not necessary)
 # dat <- as.data.frame(readr::read_csv('data/data.csv'))
 
 ## read in cluster data after clustering is complete
-clust <- as.data.frame(readr::read_csv('data/cluster.csv'))
+clust <- as.data.frame(readr::read_csv('../data/cluster.csv'))
 clust <- within(clust, {
   Filename <- `File Name`
-  Group <- gsub('^(.)|.', '\\U\\1', Filename, perl = TRUE)
+  Group    <- gsub('^(.)|.', '\\U\\1', Filename, perl = TRUE)
 })
 
 ## read in force-directed layout coordinates after FDL is complete
-coords <- as.data.frame(readr::read_delim('data/coords.csv', ';'))
+coords <- as.data.frame(readr::read_delim('../data/coords.csv', ';'))
 
 coords <- within(coords, {
   ## data reflected about y-axis on mac but not windows?
@@ -151,9 +206,16 @@ coords <- within(coords, {
 
 
 datm <- merge(coords, clust, by = c('Filename', 'EventID'))
+
+
+## rescale continuous data for better figures because why not
+idx <- grep(':', names(datm), value = TRUE)
+datm[, idx] <- lapply(datm[, idx], function(x) log2(x + 1))
 ```
 
 # 1. Identify cytotoxic T cells (also called CD8+ T cells; they express CD3 and CD8, but not CD4) in all samples.
+
+Visually inspect the figures for expression levels of CD3, CD4, and CD8. Use `km` to create several clusters (eg, as many clusters as x-shift found), then pick out one or more to highlight in the final figure.
 
 ```{r, fig.width = 10, fig.height = 12}
 par(mfrow = c(3,2))
@@ -164,7 +226,7 @@ fdl(datm, 'CD3')
 fdl(datm, 'CD8a')
 fdl(datm, 'CD4')
 
-fdl(datm, NULL, legend = list(title = 'CD3/CD8+, CD4-'))
+fdl(datm, NULL)
 
 ## choose groups to highlight manually
 # km(datm)
@@ -179,6 +241,10 @@ abline(h = grconvertY(1:2 / 3, 'ndc'), v = grconvertX(.5, 'ndc'), xpd = NA)
 ```
 
 # 2. Determine whether there are differences in expression of PD-1, Tim-3, LAG-3, CTLA-4, ICOS, 4-1BB, OX-40, Ki-67, HLA-DR, and CD38 on CD8+ T cells between patient Groups A and B.
+
+X-shift can do enrichment analyses, but we will inspect this visually using the same function as above but splitting by group.
+
+All points are plotted for each figure. On the left panel, only points belonging to patients in group A are colored by marker and grayed-out if belonging to patients in group B.
 
 ```{r, fig.width=10, fig.height=4}
 wh <- c('PD', 'Tim', 'LAG', 'CTLA4', 'ICOS',

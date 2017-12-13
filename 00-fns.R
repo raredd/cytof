@@ -1,40 +1,7 @@
 ## fns
 
-fdl_split <- function(data, group = 'ClusterID', split = 'Group',
-                      legend = list(), reset_par = TRUE) {
-  sp <- split(data, data[, split])
-  gr <- grep(sprintf('\\b%s\\b', group), names(data))
-  xr <- range(data[, gr], na.rm = TRUE)
-  
-  op <- par(oma = c(0,0,0,0))
-  if (reset_par)
-    on.exit(par(op))
-  
-  lapply(seq_along(sp), function(ii) {
-    x <- sp[[ii]]
-    
-    fdl(data, group, FALSE, 'grey50', xr)
-    par(new = TRUE)
-    fdl(x, group, FALSE, NULL, xr, FALSE)
-    
-    mtext(names(sp)[ii], at = grconvertX(0, 'nfc'),
-          adj = -1, line = -2, font = 2L, cex = 1.5)
-  })
-  
-  cc <- c('blue', 'cyan', 'green', 'yellow', 'red')
-  nc <- seq_along(cc)
-  largs <- list(
-    x = 'topright', pch = 16L, title = gsub(':.*', '', group), xpd = NA,
-    col = cc,
-    legend = sprintf('%.1f', quantile(data[, gr], (nc - 1L) / diff(range(nc))))
-  )
-  do.call('legend', modifyList(largs, legend))
-  
-  invisible(NULL)
-}
-
 fdl <- function(data, group = 'ClusterID', legend = list(),
-                col = NULL, from = NULL, reset_par = TRUE) {
+                col = NULL, from = NULL, reset_par = TRUE, add = FALSE) {
   ## interpolate colors based on continuous values
   interp <- function(x, col, alpha = FALSE, n = 1e5L,
                      fr = NULL, to = 0:1) {
@@ -59,7 +26,12 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
   data <- data[order(data[, var]), ]
   fvar <- as.factor(data[, var])
   
-  colors <- if (!(ok <- nlevels(fvar) < 50L))
+  ## guess if data is continuous or discrete
+  ok <- is.factor(data[, var]) ||
+    is.character(data[, var]) ||
+    all(round(data[, var]) == data[, var])
+  
+  colors <- if (!ok)
     c('blue', 'cyan', 'green', 'yellow', 'red') else 'grey50'
   if (!is.null(col))
     colors <- c('transparent', col)
@@ -69,7 +41,8 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
   if (reset_par)
     on.exit(par(op))
   
-  plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
+  if (!add)
+    plot(Y ~ X, data, type = 'n', ann = FALSE, axes = FALSE, bty = 'n')
   
   if (is.null(group))
     points(Y ~ X, data, pch = '.', cex = 2,
@@ -89,6 +62,37 @@ fdl <- function(data, group = 'ClusterID', legend = list(),
     )
     do.call('legend', modifyList(largs, legend))
   }
+  
+  invisible(NULL)
+}
+
+fdl_split <- function(data, group = 'ClusterID', split = 'Group',
+                      legend = list()) {
+  sp <- split(data, data[, split])
+  gr <- grep(sprintf('\\b%s\\b', group), names(data))
+  xr <- range(data[, gr], na.rm = TRUE)
+  
+  op <- par(oma = c(0,0,0,0))
+  on.exit(par(op))
+  
+  lapply(seq_along(sp), function(ii) {
+    x <- sp[[ii]]
+    
+    fdl(data, group, FALSE, 'grey50', xr)
+    par(new = TRUE)
+    fdl(x, group, FALSE, NULL, xr, FALSE, TRUE)
+    mtext(names(sp)[ii], at = grconvertX(0, 'nfc'),
+          adj = -1, line = -2, font = 2L, cex = 1.5)
+  })
+  
+  cc <- c('blue', 'cyan', 'green', 'yellow', 'red')
+  nc <- seq_along(cc)
+  largs <- list(
+    x = 'topright', pch = 16L, title = gsub(':.*', '', group), xpd = NA,
+    col = cc,
+    legend = sprintf('%.1f', quantile(data[, gr], (nc - 1L) / diff(range(nc))))
+  )
+  do.call('legend', modifyList(largs, legend))
   
   invisible(NULL)
 }
