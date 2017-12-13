@@ -1,12 +1,5 @@
 
-<style>
-#content img {
-  float: right;
-  margin: 0px 0px 15px 20px;
-}
-</style>
-
-<div id="content">
+<div style="float: right; margin: 0px 0px 15px 20px;">
 <img src="out/fdl.gif" />
 </div>
 
